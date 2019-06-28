@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 import tensorflow as tf
 
-from ecodse_funtime_alpha.models import FuntimeResnet50, PretrainedVGG16, SimpleCNN, TestMLP
+from ecodse_funtime_alpha.models import CustomVGG16, FuntimeResnet50, PretrainedVGG16, SimpleCNN, TestMLP
 
 
 class TestTestMLP(object):
@@ -102,3 +102,22 @@ class TestPretrainedVGG16(object):
     def test_poolassert(self):
         with pytest.raises(AssertionError):
             _ = PretrainedVGG16(self.outsize, train_vgg=False, pooling=123)
+
+
+class TestCustomVGG16(object):
+    @pytest.fixture(autouse=True)
+    def create_data(self):
+        self.batchsize = 2
+        self.img_size = 256
+        self.img_channel = 3
+        self.outsize = 9
+        self.testinput = tf.zeros([self.batchsize, self.img_size, self.img_size, self.img_channel])
+
+    def test_outshape(self):
+        model = CustomVGG16()
+        out = model(self.testinput)
+        assert np.array_equal(tf.shape(out).numpy(), [self.batchsize, self.outsize])
+
+    def test_badpooling(self):
+        with pytest.raises(AssertionError):
+            _ = CustomVGG16(stride_pool1=128, stride_pool2=10)
