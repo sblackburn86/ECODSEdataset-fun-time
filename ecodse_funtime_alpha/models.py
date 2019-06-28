@@ -164,3 +164,73 @@ class FuntimeResnet50(tf.keras.Model):
             logits prediction of the model for the outsize classes
         """
         return self.prediction_layer(self.base_model(inputs))
+
+
+class PretrainedVGG16(tf.keras.Model):
+    """
+    A retrainable VGG16 net
+
+    Attributes
+    ----------
+    base_model : tf.keras.applications.VGG16
+        an instance of a VGG16 model with weights initialized from imagenet
+    prediction_layer: tf.keras.layers.Dense
+        flatten the resnet output and a fully connected layers to calculate the prediction logits
+
+    Methods
+    -------
+    call:
+        inherit from keras
+        Usage example: model(x)
+    """
+
+    def __init__(self, outsize, train_vgg=False, pooling=None):
+        """
+        Class constructor
+
+        Parameters
+        ----------
+        outsize : int
+           number of dimensions of the output
+        train_vgg : bool, optional
+            if True, weights in the vgg16 are trainable;
+            if False, weights are frozen;
+            by default False;
+        pooling : string, optional
+            type of pooling to apply after the VGG network
+            None: no pooling is applied, the output is flatten
+            'avg': average pooling
+            'max' : max pooling
+        """
+        super(PretrainedVGG16, self).__init__(self)
+        if pooling:
+            assert pooling in ["avg", "max"], "Pooling should be None, avg, or max"
+
+        self.base_model = tf.keras.applications.VGG16(input_shape=(256, 256, 3),
+                                                      include_top=False,
+                                                      weights='imagenet',
+                                                      pooling=pooling)
+        self.base_model.trainable = train_vgg
+        if pooling:
+            self.prediction_layer = tf.keras.layers.Dense(outsize)
+        else:
+            self.prediction_layer = tf.keras.Sequential([
+                tf.keras.layers.Flatten(),
+                tf.keras.layers.Dense(outsize)
+            ])
+
+    def call(self, inputs):
+        """
+        Forward pass for the model
+
+        Parameters
+        ----------
+        inputs : tf.tensor shape = (batchsize, 256, 256, 3)
+            mini-batch of batchsize images of size 256 x 256 x 3
+
+        Returns
+        -------
+        tf.tensor shape = (batchsize, outsize)
+            logits prediction of the model for the outsize classes
+        """
+        return self.prediction_layer(self.base_model(inputs))
