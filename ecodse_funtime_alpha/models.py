@@ -106,3 +106,61 @@ class SimpleCNN(tf.keras.Model):
             logits prediction of the model for the outsize classes
         """
         return self.model(inputs)
+
+
+class FuntimeResnet50(tf.keras.Model):
+    """
+    A retrainable resnet
+
+    Attributes
+    ----------
+    base_model : tf.keras.applications.ResNet50
+        an instance of a resnet50 model with weights initialized from imagenet
+    prediction_layer: tf.keras.layers.Dense
+        flatten the resnet output and a fully connected layers to calculate the prediction logits
+
+    Methods
+    -------
+    call:
+        inherit from keras
+        Usage example: model(x)
+    """
+
+    def __init__(self, outsize, train_resnet=False):
+        """
+        Class constructor
+
+        Parameters
+        ----------
+        outsize : int
+            number of dimensions of the output
+        train_resnet : bool, optional
+            if True, weights in the resnet50 are trainable;
+            if False, weights are frozen;
+            by default False;
+        """
+        super(FuntimeResnet50, self).__init__(self)
+        self.base_model = tf.keras.applications.ResNet50(input_shape=(256, 256, 3),
+                                                         include_top=False,
+                                                         weights='imagenet')
+        self.base_model.trainable = train_resnet
+        self.prediction_layer = tf.keras.Sequential([
+            tf.keras.layers.Flatten(),
+            tf.keras.layers.Dense(outsize)
+        ])
+
+    def call(self, inputs):
+        """
+        Forward pass for the model
+
+        Parameters
+        ----------
+        inputs : tf.tensor shape = (batchsize, 256, 256, 3)
+            mini-batch of batchsize images of size 256 x 256 x 3
+
+        Returns
+        -------
+        tf.tensor shape = (batchsize, outsize)
+            logits prediction of the model for the outsize classes
+        """
+        return self.prediction_layer(self.base_model(inputs))
