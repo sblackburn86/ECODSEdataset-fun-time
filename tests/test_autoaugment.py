@@ -17,6 +17,7 @@ from ecodse_funtime_alpha.autoaugment import rotate
 from ecodse_funtime_alpha.autoaugment import sharpness
 from ecodse_funtime_alpha.autoaugment import shear
 from ecodse_funtime_alpha.autoaugment import solarize
+from ecodse_funtime_alpha.autoaugment import SVHN_policy
 from ecodse_funtime_alpha.autoaugment import translate
 
 tf.enable_eager_execution()
@@ -174,4 +175,40 @@ class TestAutoAugment(object):
         augment_policy = CIFAR10_policy()
         np.random.seed(0)
         aug_img = augment_policy.call(self.tf_img)
-        assert aug_img.shape == self.tf_img.shape
+        np.random.seed(0)
+        transformations = augment_policy.subpolicies[np.random.randint(len(augment_policy.subpolicies))]
+        manual_img = self.tf_img
+        for t in transformations:
+            if np.random.random() < t[1]:
+                if len(t) == 3:
+                    manual_img = t[0](manual_img, t[2])
+                else:
+                    manual_img = t[0](manual_img, t[2], t[3])
+        assert np.all(abs(aug_img - manual_img) < 1e-3)
+
+    def test_svhn_applytransform(self):
+        augment_policy = SVHN_policy()
+        magnitude = 8
+        autocontrast_img = augment_policy.apply_transform(self.tf_img, autocontrast, 1, magnitude)
+        assert np.all(autocontrast_img.numpy() == autocontrast(self.tf_img, magnitude).numpy())
+        id_img = augment_policy.apply_transform(self.tf_img, autocontrast, 0, magnitude)
+        assert np.all(id_img == self.tf_img)
+        np.random.seed(0)
+        shear_img = augment_policy.apply_transform(self.tf_img, shear, 1, magnitude, "x")
+        np.random.seed(0)
+        assert np.all(abs(shear_img.numpy() - shear(self.tf_img, magnitude, "x")) < 1e-3)
+
+    def test_svhn_call(self):
+        augment_policy = SVHN_policy()
+        np.random.seed(0)
+        aug_img = augment_policy.call(self.tf_img)
+        np.random.seed(0)
+        transformations = augment_policy.subpolicies[np.random.randint(len(augment_policy.subpolicies))]
+        manual_img = self.tf_img
+        for t in transformations:
+            if np.random.random() < t[1]:
+                if len(t) == 3:
+                    manual_img = t[0](manual_img, t[2])
+                else:
+                    manual_img = t[0](manual_img, t[2], t[3])
+        assert np.all(abs(aug_img - manual_img) < 1e-3)
