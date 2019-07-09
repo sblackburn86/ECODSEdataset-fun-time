@@ -9,6 +9,7 @@ from ecodse_funtime_alpha.autoaugment import CIFAR10_policy
 from ecodse_funtime_alpha.autoaugment import color
 from ecodse_funtime_alpha.autoaugment import contrast
 from ecodse_funtime_alpha.autoaugment import equalize
+from ecodse_funtime_alpha.autoaugment import flip
 from ecodse_funtime_alpha.autoaugment import ImageNet_policy
 from ecodse_funtime_alpha.autoaugment import invert
 from ecodse_funtime_alpha.autoaugment import pil_unwrap
@@ -20,6 +21,8 @@ from ecodse_funtime_alpha.autoaugment import shear
 from ecodse_funtime_alpha.autoaugment import solarize
 from ecodse_funtime_alpha.autoaugment import SVHN_policy
 from ecodse_funtime_alpha.autoaugment import translate
+from ecodse_funtime_alpha.autoaugment import zero_pad_and_crop
+from ecodse_funtime_alpha.cutout import cutout_tf
 
 tf.enable_eager_execution()
 
@@ -48,7 +51,7 @@ class TestAutoAugment(object):
 
     def test_unwrap(self):
         tf_img = pil_unwrap(self.pil_img)
-        assert tf_img.shape == (256, 256, 3)
+        assert tf_img.shape == (self.img_size, self.img_size, self.img_channel)
         assert np.all(tf_img[self.img_colorpixel].numpy() == self.img_color / 255)
 
     def test_autocontrast(self):
@@ -73,6 +76,11 @@ class TestAutoAugment(object):
     def test_equalize(self):
         eq_img = equalize(self.tf_img)
         assert eq_img.shape == (self.img_size, self.img_size, self.img_channel)
+
+    def test_flip(self):
+        np.random.seed(0)
+        flip_img = flip(self.tf_img)
+        assert flip_img.shape == self.tf_img.shape
 
     def test_invert(self):
         invert_img = invert(self.tf_img)
@@ -160,6 +168,11 @@ class TestAutoAugment(object):
         assert np.all(translate_img[self.img_colorpixel - magnitude:-magnitude].numpy() == self.img_color / 255)
         assert np.all(translate_img[-magnitude:].numpy() == 0)
 
+    def test_zeropadandcrop(self):
+        amount = 4
+        transformed_img = zero_pad_and_crop(self.tf_img, amount)
+        assert transformed_img.shape != self.tf_img
+
     def test_cifar10_applytransform(self):
         augment_policy = CIFAR10_policy()
         magnitude = 8
@@ -174,17 +187,19 @@ class TestAutoAugment(object):
 
     def test_cifar10_call(self):
         augment_policy = CIFAR10_policy()
-        np.random.seed(18)
+        np.random.seed(6)
         aug_img = augment_policy.call(self.tf_img)
-        np.random.seed(18)
+        np.random.seed(6)
+        manual_img = flip(self.tf_img)
+        manual_img = zero_pad_and_crop(manual_img)
         transformations = augment_policy.subpolicies[np.random.randint(len(augment_policy.subpolicies))]
-        manual_img = self.tf_img
         for t in transformations:
             if np.random.random() < t[1]:
                 if len(t) == 3:
                     manual_img = t[0](manual_img, t[2])
                 else:
                     manual_img = t[0](manual_img, t[2], t[3])
+        manual_img = cutout_tf(manual_img)
         assert np.all(abs(aug_img - manual_img) < 1e-3)
 
     def test_svhn_applytransform(self):

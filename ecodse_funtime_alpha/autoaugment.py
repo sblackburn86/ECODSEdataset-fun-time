@@ -4,6 +4,8 @@ import tensorflow as tf
 
 from PIL import ImageOps
 
+from ecodse_funtime_alpha.cutout import cutout_tf
+
 
 def pil_wrap(img):
     """Convert the img tensor to a PIL Image
@@ -130,6 +132,24 @@ def equalize(img, magnitude=None):
         equalized image
     """
     return pil_unwrap(ImageOps.equalize(pil_wrap(img)))
+
+
+def flip(img):
+    """flip the input image horizontally with 50% probability
+
+    Parameters
+    ----------
+    img : tf.tensor
+        input image
+
+    Returns
+    -------
+    tf.tensor
+        transformed image
+    """
+    if np.random.random() > 0.5:
+        img = tf.convert_to_tensor(np.fliplr(img.numpy()))
+    return img
 
 
 def invert(img, magnitude=None):
@@ -291,6 +311,29 @@ def translate(img, magnitude, axis="x"):
         return pil_unwrap(img.transform((256, 256), PIL.Image.AFFINE, (1, 0, 0, 0, 1, magnitude)))
 
 
+def zero_pad_and_crop(img, amount=4):
+    """zero padding by a number of pixels equal to amount on each side, then take a random crop
+
+    Parameters
+    ----------
+    img : tf.tensor
+        input image
+    amount : int, optional
+        amount of zeros to pad by default 4
+
+    Returns
+    -------
+    tf.tensor
+        transformed image
+    """
+    img = img.numpy()
+    padded_img = np.zeros((img.shape[0] + amount * 2, img.shape[1] + amount * 2, img.shape[2]))
+    padded_img[amount:img.shape[0] + amount, amount:img.shape[1] + amount, :] = img
+    top = np.random.randint(low=0, high=2 * amount)
+    left = np.random.randint(low=0, high=2 * amount)
+    return tf.convert_to_tensor(padded_img[top:top + img.shape[0], left:left + img.shape[1], :])
+
+
 class CIFAR10_policy(object):
     """
     Auto-augment policy for CIFAR10
@@ -385,10 +428,15 @@ class CIFAR10_policy(object):
         tf.tensor
             transformed image
         """
+        # first, apply a standard preprocess to image
+        image = flip(image)
+        image = zero_pad_and_crop(image)
+
         # first, choose a random sub-policy to apply
         subpol = self.subpolicies[np.random.randint(len(self.subpolicies))]
         for operation in subpol:
             image = self.apply_transform(image, *operation)
+        image = cutout_tf(image)
         return image
 
 
