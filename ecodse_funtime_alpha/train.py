@@ -4,8 +4,10 @@ import sys
 
 import tensorflow as tf
 
+import ecodse_funtime_alpha.autoaugment as autoaugment
 import ecodse_funtime_alpha.data as data
 import ecodse_funtime_alpha.models as models
+
 
 tf.enable_eager_execution()
 
@@ -38,6 +40,35 @@ def batch_dataset(dataset, nepoch, batchsize):
     # repeat for multiple epochs; the earlier shuffle is different for each epoch
     dataset = dataset.repeat(nepoch)
     return dataset
+
+
+def augment_images(dataset, scheme="cifar10"):
+    """
+    Augment images according to a given scheme
+
+    Parameters
+    ----------
+    dataset : tf dataset
+        initial dataset, unshuffled, not repeated and not split into mini-batches
+    scheme : str, optional
+        data augmentation method, by default "auto-augment-cifar10"
+            cifar10: use method described in https://arxiv.org/abs/1805.09501 for CIFAR-10
+            imagenet: use auto-augment method for ImageNet
+            svhn: use auto-augment method for SVHN
+            no-augment: do not use any image augmentation
+    """
+    if scheme == "cifar10":
+        augment_policy = autoaugment.CIFAR10_policy()
+    elif scheme == "imagenet":
+        augment_policy = autoaugment.ImageNet_policy()
+    elif scheme == "svhn":
+        augment_policy = autoaugment.SVHN_policy()
+    else:
+        # no augmentation
+        return dataset
+    # dataset.map is not done eagerly; using contrib.earg.py_func to get it running
+    # will be deprecated in tensorflow 2
+    return dataset.map(lambda x: tf.contrib.eager.py_func(augment_policy.call, [x], tf.float64))
 
 
 def train_loop(dataset, model, optimizer, nepoch, batchsize):
@@ -73,7 +104,7 @@ def train_loop(dataset, model, optimizer, nepoch, batchsize):
     return model
 
 
-def fit_loop(dataset, model, optimizer, nepoch, batchsize):
+def fit_loop(dataset, model, optimizer, nepoch, batchsize, augment_policy="no-augment"):
     """
     Training loop fitting the model using the keras .fit() method
 
@@ -89,6 +120,8 @@ def fit_loop(dataset, model, optimizer, nepoch, batchsize):
         number of epochs to train the model
     batchsize : int
         size of the mini-batches
+    augment_policy: str, optional
+        image augmentation policy to apply, by default no-augment
 
     Returns
     -------
@@ -97,6 +130,7 @@ def fit_loop(dataset, model, optimizer, nepoch, batchsize):
     """
     # number of steps in an epoch is len(dataset) / batchsize (math.ceil for the remainder)
     nstep = math.ceil(tf.data.experimental.cardinality(dataset).numpy() / batchsize)
+    dataset = augment_images(dataset, scheme=augment_policy)
     dataset = batch_dataset(dataset, nepoch, batchsize)
     model.compile(optimizer=optimizer,
                   loss=tf.keras.losses.binary_crossentropy,
