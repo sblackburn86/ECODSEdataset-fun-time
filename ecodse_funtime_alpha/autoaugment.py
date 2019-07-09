@@ -491,3 +491,104 @@ class SVHN_policy(object):
         for operation in subpol:
             image = self.apply_transform(image, *operation)
         return image
+
+
+class ImageNet_policy(object):
+    """
+    Auto-augment policy for ImageNet
+
+    Attributes
+    ----------
+    subpolicies : list of tuples
+        each element if a set of 2 operations for image augmentation representing the 25 optimal policies for ImageNet
+
+    Methods
+    -------
+    apply_transformation:
+        apply a given transformation to an image
+    call:
+        transform an image according to a random sub-policy
+        Usage example: augmentation_policy.call(image)
+    """
+
+    def __init__(self):
+        """
+        Class Constructor
+        """
+        self.subpolicies = [
+            [(posterize, 0.4, 8), (rotate, 0.6, 9)],
+            [(solarize, 0.6, 5), (autocontrast, 0.6, 5)],
+            [(equalize, 0.8, 8), (equalize, 0.6, 3)],
+            [(posterize, 0.6, 7), (posterize, 0.6, 6)],
+            [(equalize, 0.4, 7), (solarize, 0.2, 4)],
+            [(equalize, 0.4, 4, (rotate, 0.8, 8))],
+            [(solarize, 0.6, 3), (equalize, 0.6, 7)],
+            [(posterize, 0.8, 5), (equalize, 1, 2)],
+            [(rotate, 0.2, 3), (solarize, 0.6, 8)],
+            [(equalize, 0.6, 8), (posterize, 0.4, 6)],
+            [(rotate, 0.8, 8), (color, 0.4, 0)],
+            [(rotate, 0.4, 9), (equalize, 0.6, 2)],
+            [(equalize, 0, 7), (equalize, 0.8, 8)],
+            [(invert, 0.6, 4), (equalize, 1, 8)],
+            [(color, 0.6, 4), (contrast, 1, 8)],
+            [(rotate, 0.8, 8), (color, 1, 2)],
+            [(color, 0.8, 8), (solarize, 0.8, 7)],
+            [(sharpness, 0.4, 7), (invert, 0., 8)],
+            [(shear, 0.6, 5, "x"), (equalize, 1, 9)],
+            [(color, 0.4, 0), (equalize, 0.6, 3)],
+            [(equalize, 0.4, 7), (solarize, 0.2, 4)],
+            [(solarize, 0.6, 5), (autocontrast, 0.6, 5)],
+            [(invert, 0.6, 4), (equalize, 1, 8)],
+            [(color, 0.6, 4), (contrast, 1, 8)],
+            [(equalize, 0.8, 8), (equalize, 0.6, 3)]
+        ]
+
+    def apply_transform(self, img, transformation, prob, magnitude=None, axis=None):
+        """apply a transformation to an image with probability prob
+
+        Parameters
+        ----------
+        img : tf.tensor
+            image to transform as a tensorflow tensor
+        tranformation : function
+            transformation to apply
+        prob : float
+            probability to apply the transformation
+        magnitude : int, optional
+            magnitude of the transformation, by default None
+        axis : str, optional
+            axis on which to apply transformation (translate or shear only), by default None
+
+        Returns
+        -------
+        tf tensor
+            transformed image
+        """
+        assert prob <= 1 and prob >= 0
+        if np.random.random() < prob:
+            if axis:
+                return transformation(img, magnitude, axis)
+            else:
+                return transformation(img, magnitude)
+        else:
+            return img
+
+    def call(self, image):
+        """
+        return an augmented image according to the policy
+
+        Parameters
+        ----------
+        image : tf.tensor
+            image stored as a tensor
+
+        Returns
+        -------
+        tf.tensor
+            transformed image
+        """
+        # first, choose a random sub-policy to apply
+        subpol = self.subpolicies[np.random.randint(len(self.subpolicies))]
+        for operation in subpol:
+            image = self.apply_transform(image, *operation)
+        return image
