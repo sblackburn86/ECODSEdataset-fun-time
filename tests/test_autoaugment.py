@@ -219,14 +219,16 @@ class TestAutoAugment(object):
         np.random.seed(3)
         aug_img = augment_policy.call(self.tf_img)
         np.random.seed(3)
+        manual_img = flip(self.tf_img)
+        manual_img = zero_pad_and_crop(manual_img)
         transformations = augment_policy.subpolicies[np.random.randint(len(augment_policy.subpolicies))]
-        manual_img = self.tf_img
         for t in transformations:
             if np.random.random() < t[1]:
                 if len(t) == 3:
                     manual_img = t[0](manual_img, t[2])
                 else:
                     manual_img = t[0](manual_img, t[2], t[3])
+        manual_img = cutout_tf(manual_img)
         assert np.all(abs(aug_img - manual_img) < 1e-3)
 
     def test_imagenet_applytransform(self):
@@ -246,9 +248,11 @@ class TestAutoAugment(object):
         np.random.seed(4)
         aug_img = augment_policy.call(self.tf_img)
         np.random.seed(4)
+        manual_img = flip(self.tf_img)
+        manual_img = zero_pad_and_crop(manual_img)
         transformations = augment_policy.subpolicies[np.random.randint(len(augment_policy.subpolicies))]
-        manual_img = self.tf_img
         for t in transformations:
             if np.random.random() < t[1]:
                 manual_img = t[0](manual_img, t[2])
+        manual_img = cutout_tf(manual_img)
         assert np.all(abs(aug_img - manual_img) < 1e-3)

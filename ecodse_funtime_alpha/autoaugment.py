@@ -432,10 +432,12 @@ class CIFAR10_policy(object):
         image = flip(image)
         image = zero_pad_and_crop(image)
 
-        # first, choose a random sub-policy to apply
+        # second choose a random sub-policy to apply
         subpol = self.subpolicies[np.random.randint(len(self.subpolicies))]
         for operation in subpol:
             image = self.apply_transform(image, *operation)
+
+        # finally, apply cutout to the image
         image = cutout_tf(image)
         return image
 
@@ -534,10 +536,17 @@ class SVHN_policy(object):
         tf.tensor
             transformed image
         """
-        # first, choose a random sub-policy to apply
+        # first, apply a standard preprocess to image
+        image = flip(image)
+        image = zero_pad_and_crop(image)
+
+        # second choose a random sub-policy to apply
         subpol = self.subpolicies[np.random.randint(len(self.subpolicies))]
         for operation in subpol:
             image = self.apply_transform(image, *operation)
+
+        # finally, apply cutout to the image
+        image = cutout_tf(image)
         return image
 
 
@@ -636,8 +645,15 @@ class ImageNet_policy(object):
         tf.tensor
             transformed image
         """
-        # first, choose a random sub-policy to apply
+        # first, apply a standard preprocess to image
+        image = flip(image)
+        image = zero_pad_and_crop(image)
+
+        # second choose a random sub-policy to apply
         subpol = self.subpolicies[np.random.randint(self.npolicy)]
         for operation in subpol:
             image = self.apply_transform(image, *operation)
+
+        # finally, apply cutout to the image
+        image = cutout_tf(image)
         return image
