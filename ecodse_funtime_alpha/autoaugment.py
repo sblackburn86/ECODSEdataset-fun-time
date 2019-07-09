@@ -542,6 +542,7 @@ class ImageNet_policy(object):
             [(color, 0.6, 4), (contrast, 1, 8)],
             [(equalize, 0.8, 8), (equalize, 0.6, 3)]
         ]
+        self.npolicy = len(self.subpolicies)
 
     def apply_transform(self, img, transformation, prob, magnitude=None, axis=None):
         """apply a transformation to an image with probability prob
@@ -588,7 +589,7 @@ class ImageNet_policy(object):
             transformed image
         """
         # first, choose a random sub-policy to apply
-        subpol = self.subpolicies[np.random.randint(len(self.subpolicies))]
+        subpol = self.subpolicies[np.random.randint(self.npolicy)]
         for operation in subpol:
             image = self.apply_transform(image, *operation)
         return image
