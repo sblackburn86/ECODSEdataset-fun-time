@@ -270,7 +270,7 @@ class CustomVGG16(tf.keras.Model):
                  pool2=2,
                  stride_pool2=2,
                  filter3=256,
-                 kernel_size3=2,
+                 kernel_size3=3,
                  stride3=1,
                  pool3=2,
                  stride_pool3=2,

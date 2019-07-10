@@ -176,6 +176,196 @@ def get_args(args):
                            default=def_ksize,
                            type=int,
                            help=f'Size of kernels in CNN (default {def_ksize})')
+
+    def_f1 = 64
+    argparser.add_argument('-f1',
+                           '--filter1',
+                           default=def_f1,
+                           type=int,
+                           help=f'Number of kernels in the first VGG block (default {def_f1})')
+
+    def_k1 = 3
+    argparser.add_argument('-ks1',
+                           '--ksize1',
+                           default=def_k1,
+                           type=int,
+                           help=f'Size of kernels in the first VGG block (default {def_k1})')
+
+    def_s1 = 1
+    argparser.add_argument('-s1',
+                           '--stride1',
+                           default=def_s1,
+                           type=int,
+                           help=f'Stride in the first VGG block (default {def_s1})')
+
+    def_p1 = 2
+    argparser.add_argument('-p1',
+                           '--pool1',
+                           default=def_p1,
+                           type=int,
+                           help=f'Max pooling size in the first VGG block (default {def_p1})')
+
+    def_sp1 = 2
+    argparser.add_argument('-sp1',
+                           '--stridepool1',
+                           default=def_sp1,
+                           type=int,
+                           help=f'Pool stride in the first VGG block (default {def_sp1})')
+
+    def_f2 = 128
+    argparser.add_argument('-f2',
+                           '--filter2',
+                           default=def_f2,
+                           type=int,
+                           help=f'Number of kernels in the second VGG block (default {def_f2})')
+
+    def_k2 = 3
+    argparser.add_argument('-ks2',
+                           '--ksize2',
+                           default=def_k2,
+                           type=int,
+                           help=f'Size of kernels in the second VGG block (default {def_k2})')
+
+    def_s2 = 1
+    argparser.add_argument('-s2',
+                           '--stride2',
+                           default=def_s2,
+                           type=int,
+                           help=f'Stride in the second VGG block (default {def_s2})')
+
+    def_p2 = 2
+    argparser.add_argument('-p2',
+                           '--pool2',
+                           default=def_p2,
+                           type=int,
+                           help=f'Max pooling size in the second VGG block (default {def_p2})')
+
+    def_sp2 = 2
+    argparser.add_argument('-sp2',
+                           '--stridepool2',
+                           default=def_sp2,
+                           type=int,
+                           help=f'Pool stride in the second VGG block (default {def_sp2})')
+
+    def_f3 = 256
+    argparser.add_argument('-f3',
+                           '--filter3',
+                           default=def_f3,
+                           type=int,
+                           help=f'Number of kernels in the 3rd VGG block (default {def_f3})')
+
+    def_k3 = 3
+    argparser.add_argument('-ks3',
+                           '--ksize3',
+                           default=def_k3,
+                           type=int,
+                           help=f'Size of kernels in the 3rd VGG block (default {def_k3})')
+
+    def_s3 = 1
+    argparser.add_argument('-s3',
+                           '--stride3',
+                           default=def_s3,
+                           type=int,
+                           help=f'Stride in the 3rd VGG block (default {def_s3})')
+
+    def_p3 = 2
+    argparser.add_argument('-p3',
+                           '--pool3',
+                           default=def_p3,
+                           type=int,
+                           help=f'Max pooling size in the 3rd VGG block (default {def_p3})')
+
+    def_sp3 = 2
+    argparser.add_argument('-sp3',
+                           '--stridepool3',
+                           default=def_sp3,
+                           type=int,
+                           help=f'Pool stride in the 3rd VGG block (default {def_sp3})')
+
+    def_f4 = 512
+    argparser.add_argument('-f4',
+                           '--filter4',
+                           default=def_f4,
+                           type=int,
+                           help=f'Number of kernels in the 4th VGG block (default {def_f4})')
+
+    def_k4 = 3
+    argparser.add_argument('-ks4',
+                           '--ksize4',
+                           default=def_k4,
+                           type=int,
+                           help=f'Size of kernels in the 4th VGG block (default {def_k4})')
+
+    def_s4 = 1
+    argparser.add_argument('-s4',
+                           '--stride4',
+                           default=def_s4,
+                           type=int,
+                           help=f'Stride in the 4th VGG block (default {def_s4})')
+
+    def_p4 = 2
+    argparser.add_argument('-p4',
+                           '--pool4',
+                           default=def_p4,
+                           type=int,
+                           help=f'Max pooling size in the 4th VGG block (default {def_p4})')
+
+    def_sp4 = 2
+    argparser.add_argument('-sp4',
+                           '--stridepool4',
+                           default=def_sp4,
+                           type=int,
+                           help=f'Pool stride in the 4th VGG block (default {def_sp4})')
+
+    def_f5 = 512
+    argparser.add_argument('-f5',
+                           '--filter5',
+                           default=def_f5,
+                           type=int,
+                           help=f'Number of kernels in the 5th VGG block (default {def_f5})')
+
+    def_k5 = 3
+    argparser.add_argument('-ks5',
+                           '--ksize5',
+                           default=def_k5,
+                           type=int,
+                           help=f'Size of kernels in the 5th VGG block (default {def_k5})')
+
+    def_s5 = 1
+    argparser.add_argument('-s5',
+                           '--stride5',
+                           default=def_s5,
+                           type=int,
+                           help=f'Stride in the 5th VGG block (default {def_s5})')
+
+    def_p5 = 2
+    argparser.add_argument('-p5',
+                           '--pool5',
+                           default=def_p5,
+                           type=int,
+                           help=f'Max pooling size in the 5th VGG block (default {def_p5})')
+
+    def_sp5 = 2
+    argparser.add_argument('-sp5',
+                           '--stridepool5',
+                           default=def_sp5,
+                           type=int,
+                           help=f'Pool stride in the 5th VGG block (default {def_sp5})')
+
+    def_dense1 = 4096
+    argparser.add_argument('-d1',
+                           '--dense1',
+                           default=def_dense1,
+                           type=int,
+                           help=f'Size of 1st dense layer in the VGG network (default {def_dense1})')
+
+    def_dense2 = 4096
+    argparser.add_argument('-d2',
+                           '--dense2',
+                           default=def_dense2,
+                           type=int,
+                           help=f'Size of 2nd dense layer in the VGG network (default {def_dense2})')
+
     def_lr = 0.1
     argparser.add_argument('-l',
                            '--lr',
@@ -203,6 +393,36 @@ if __name__ == "__main__":
     tf.random.set_random_seed(args.seed)
     dataset = data.get_dataset(args.imagepath, args.labelpath)
     # model = models.TestMLP(10, 9)
-    model = models.SimpleCNN(args.kernels, args.ksize, 9)
+    # model = models.SimpleCNN(args.kernels, args.ksize, 9)
+    model = models.CustomVGG16(
+        filter1=args.filter1,
+        kernel_size1=args.ksize1,
+        stride1=args.stride1,
+        pool1=args.pool1,
+        stride_pool1=args.stridepool1,
+        filter2=args.filter2,
+        kernel_size2=args.ksize2,
+        stride2=args.stride2,
+        pool2=args.pool2,
+        stride_pool2=args.stridepool2,
+        filter3=args.filter3,
+        kernel_size3=args.ksize3,
+        stride3=args.stride3,
+        pool3=args.pool3,
+        stride_pool3=args.stridepool3,
+        filter4=args.filter4,
+        kernel_size4=args.ksize4,
+        stride4=args.stride4,
+        pool4=args.pool4,
+        stride_pool4=args.stridepool4,
+        filter5=args.filter5,
+        kernel_size5=args.ksize5,
+        stride5=args.stride5,
+        pool5=args.pool5,
+        stride_pool5=args.stridepool5,
+        dense1=args.dense1,
+        dense2=args.dense2,
+        outsize=9
+    )
     optimizer = tf.keras.optimizers.Adam(lr=args.lr)
     model = fit_loop(dataset, model, optimizer, args.nepoch, args.batchsize)
