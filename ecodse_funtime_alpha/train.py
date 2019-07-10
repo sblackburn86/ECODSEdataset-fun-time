@@ -366,6 +366,13 @@ def get_args(args):
                            type=int,
                            help=f'Size of 2nd dense layer in the VGG network (default {def_dense2})')
 
+    def_dataaugmentscheme = None
+    argparser.add_argument('-da',
+                           '--dataaugment',
+                           default=def_dataaugmentscheme,
+                           type=str,
+                           help=f'Data augmentation scheme based on AutoAugment Implemented options are \n cifar10\n imagenet \n svhn \n(default {def_dataaugmentscheme})')
+
     def_lr = 0.1
     argparser.add_argument('-l',
                            '--lr',
