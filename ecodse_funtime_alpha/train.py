@@ -57,18 +57,14 @@ def augment_images(dataset, scheme="cifar10"):
             svhn: use auto-augment method for SVHN
             no-augment: do not use any image augmentation
     """
-    if scheme == "cifar10":
-        augment_policy = autoaugment.CIFAR10_policy()
-    elif scheme == "imagenet":
-        augment_policy = autoaugment.ImageNet_policy()
-    elif scheme == "svhn":
-        augment_policy = autoaugment.SVHN_policy()
+    if scheme in ["cifar10", "imagenet", "svhn"]:
+        augment_policy = autoaugment.AugmentationPolicy(dataset=scheme)
+        # dataset.map is not done eagerly; using contrib.earg.py_func to get it running
+        # will be deprecated in tensorflow 2
+        return dataset.map(lambda x: tf.contrib.eager.py_func(augment_policy.call, [x], tf.float64))
     else:
         # no augmentation
         return dataset
-    # dataset.map is not done eagerly; using contrib.earg.py_func to get it running
-    # will be deprecated in tensorflow 2
-    return dataset.map(lambda x: tf.contrib.eager.py_func(augment_policy.call, [x], tf.float64))
 
 
 def train_loop(dataset, model, optimizer, nepoch, batchsize):
