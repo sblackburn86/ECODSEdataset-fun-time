@@ -1,7 +1,9 @@
 import argparse
 import math
+import os
 import sys
 
+import numpy as np
 import tensorflow as tf
 
 import ecodse_funtime_alpha.autoaugment as autoaugment
@@ -100,14 +102,16 @@ def train_loop(dataset, model, optimizer, nepoch, batchsize):
     return model
 
 
-def fit_loop(dataset, model, optimizer, nepoch, batchsize, augment_policy="no-augment"):
+def fit_loop(dataset, valid_dataset, model, optimizer, nepoch, batchsize, augment_policy=None):
     """
     Training loop fitting the model using the keras .fit() method
 
     Parameters
     ----------
     dataset : tf dataset
-        original dataset (unshuffled, not-split into mini-batches)
+        training dataset (unshuffled, not-split into mini-batches)
+    valid_dataset : tf dataset
+        validation dataset
     model : tf.keras.Model
         an initialized model working in eager execution mode
     optimizer : tf.keras.optimizers
@@ -118,6 +122,8 @@ def fit_loop(dataset, model, optimizer, nepoch, batchsize, augment_policy="no-au
         size of the mini-batches
     augment_policy: str, optional
         image augmentation policy to apply, by default no-augment
+    valid_dataset: tf dataset
+        validation dataset
 
     Returns
     -------
@@ -128,11 +134,34 @@ def fit_loop(dataset, model, optimizer, nepoch, batchsize, augment_policy="no-au
     nstep = math.ceil(tf.data.experimental.cardinality(dataset).numpy() / batchsize)
     dataset = augment_images(dataset, scheme=augment_policy)
     dataset = batch_dataset(dataset, nepoch, batchsize)
+    valid_dataset = valid_dataset.batch(batchsize)
     model.compile(optimizer=optimizer,
                   loss=tf.keras.losses.binary_crossentropy,
                   metrics=["accuracy"])
-    model.fit(dataset, epochs=nepoch, steps_per_epoch=nstep)
+    _ = model.fit(dataset, epochs=nepoch, steps_per_epoch=nstep, validation_data=valid_dataset)
     return model
+
+
+def evaluate_model(model, test_dataset, batchsize=4):
+    """evaluate the model on the test dataset
+
+    Parameters
+    ----------
+    model : tf.keras.Model
+        trained model to evaluate
+    test_dataset : tf dataset
+        test dataset
+    batchsize : int, optional
+        size of mini-batches, by default 4
+
+    Returns
+    -------
+    list of float
+        resulting metrics (loss & accuracy)
+    """
+    test_dataset = test_dataset.batch(batchsize)
+    results = model.evaluate(test_dataset)
+    return results
 
 
 def get_args(args):
@@ -150,20 +179,31 @@ def get_args(args):
        object containing the input arguments
     """
     argparser = argparse.ArgumentParser()
+
     def_impath = '../../rainforest/fixed-train-jpg/'
     argparser.add_argument('--imagepath',
                            default=def_impath,
                            help=f'path to image directory (default {def_impath})')
+
     def_labelpath = '../../rainforest/train_v3.csv'
     argparser.add_argument('--labelpath',
                            default=def_labelpath,
                            help=f'path to csv file for labels (defautlt {def_labelpath})')
-    def_seed = -1
+
+    def_seed = 0
     argparser.add_argument('-s',
                            '--seed',
                            default=def_seed,
                            type=int,
                            help=f'Set random seed to this number (default {def_seed})')
+
+    def_dataseed = 0
+    argparser.add_argument('-ds',
+                           '--dataseed',
+                           default=def_dataseed,
+                           type=int,
+                           help=f'Set random seed for data split into train / valid / test sets')
+
     def_kernels = 4
     argparser.add_argument('-k',
                            '--kernels',
@@ -398,9 +438,24 @@ def get_args(args):
 if __name__ == "__main__":
     args = get_args(sys.argv[1:])
     tf.random.set_random_seed(args.seed)
-    dataset = data.get_dataset(args.imagepath, args.labelpath)
-    # model = models.TestMLP(10, 9)
-    # model = models.SimpleCNN(args.kernels, args.ksize, 9)
+    np.random.seed(args.seed)
+
+    # split data into train/valid/test set
+    if not os.path.exists(os.path.join(args.imagepath, "splits/")):
+        os.makedirs(os.path.join(args.imagepath, "splits/"))
+
+    if os.path.exists(os.path.join(args.imagepath, "splits/", f'train_seed_{args.dataseed}.csv')):
+        train_csv = os.path.join(args.imagepath, "splits/", f'train_seed_{args.dataseed}.csv')
+        valid_csv = os.path.join(args.imagepath, "splits/", f'val_seed_{args.dataseed}.csv')
+        test_csv = os.path.join(args.imagepath, "splits/", f'test_seed_{args.dataseed}.csv')
+    else:
+        train_csv, valid_csv, test_csv = data.split_train_val_test(args.labelpath, os.path.join(args.imagepath, "splits"),
+                                                                   train_size=0.6, val_size=0.2, seed=args.dataseed)
+
+    train_dataset = data.get_dataset(args.imagepath, train_csv)
+    valid_dataset = data.get_dataset(args.imagepath, valid_csv)
+    test_dataset = data.get_dataset(args.imagepath, test_csv)
+
     model = models.CustomVGG16(
         filter1=args.filter1,
         kernel_size1=args.ksize1,
@@ -432,4 +487,5 @@ if __name__ == "__main__":
         outsize=9
     )
     optimizer = tf.keras.optimizers.Adam(lr=args.lr)
-    model = fit_loop(dataset, model, optimizer, args.nepoch, args.batchsize)
+    model = fit_loop(train_dataset, valid_dataset, model, optimizer, args.nepoch, args.batchsize)
+    results = evaluate_model(model, test_dataset, 2)

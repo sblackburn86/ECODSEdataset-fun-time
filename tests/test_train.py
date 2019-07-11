@@ -80,7 +80,7 @@ class TestBatchDataset(object):
         assert [x[0].shape[0].value for x in dataset] == size_of_batch
 
     def test_datasetsize(self):
-        batch_size = 4
+        batch_size = 1
         nepoch = 2
         dataset = batch_dataset(self.dataset, nepoch, batch_size)
         assert tf.data.experimental.cardinality(dataset).numpy() == math.ceil(self.nimage / batch_size) * nepoch
@@ -140,7 +140,7 @@ class TestFitLoop(object):
         nepoch = 1
         batch_size = 1
         before = deepcopy(self.model.trainable_variables)
-        model = fit_loop(self.dataset, self.model, tf.keras.optimizers.Adam(lr=0.1), nepoch, batch_size)
+        model = fit_loop(self.dataset, self.dataset, self.model, tf.keras.optimizers.Adam(lr=0.1), nepoch, batch_size)
         after = model.trainable_variables
         for b, a in zip(before, after):
             # make sure something changed
@@ -166,18 +166,19 @@ class TestTrainMain(object):
         self.img_color = 255
 
         p = tmpdir.mkdir("train-jpg").join("train_v2.csv")
-        p.write_text("image_name,tags\ntrain_0,a b c d e\ntrain_1,f g h i", encoding="utf-8")
+        csv_text = ["image_name,tags\n"] + [f"train_{x}, a b c d e f g h\n" for x in range(9)] + ["train_9, a b c"]
+        p.write_text("".join(csv_text), encoding="utf-8")
 
         img = np.zeros((self.img_size, self.img_size, self.img_channel), dtype=np.uint8)
         img[self.img_colorpixel] = self.img_color
 
-        Image.fromarray(img).save(str(tmpdir.join("train-jpg").join("train_0.jpg")), quality=100)
-        Image.fromarray(img).save(str(tmpdir.join("train-jpg").join("train_1.jpg")), quality=100)
+        for x in range(10):
+            Image.fromarray(img).save(str(tmpdir.join("train-jpg").join(f"train_{x}.jpg")), quality=100)
 
     def test_main(self, tmpdir):
         imagedir = str(tmpdir.join("train-jpg"))
         labelpath = str(tmpdir.join("train-jpg").join("train_v2.csv"))
         nepoch = 1
-        batchsize = 2
+        batchsize = 1
         fakearg = ["--imagepath", imagedir, "--labelpath", labelpath, "--nepoch", str(nepoch), "--batchsize", str(batchsize)]
         assert subprocess.call(["python", "ecodse_funtime_alpha/train.py", *fakearg]) == 0
