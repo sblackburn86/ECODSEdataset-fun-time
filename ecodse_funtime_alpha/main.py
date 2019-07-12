@@ -442,13 +442,13 @@ if __name__ == "__main__":
     if not os.path.exists(os.path.join(args.imagepath, "splits/")):
         os.makedirs(os.path.join(args.imagepath, "splits/"))
 
-    if os.path.exists(os.path.join(args.imagepath, "splits/", f'train_seed_{args.dataseed}.csv')):
-        train_csv = os.path.join(args.imagepath, "splits/", f'train_seed_{args.dataseed}.csv')
-        valid_csv = os.path.join(args.imagepath, "splits/", f'val_seed_{args.dataseed}.csv')
-        test_csv = os.path.join(args.imagepath, "splits/", f'test_seed_{args.dataseed}.csv')
-    else:
-        train_csv, valid_csv, test_csv = data.split_train_val_test(args.labelpath, os.path.join(args.imagepath, "splits"),
-                                                                   train_size=0.6, val_size=0.2, seed=args.dataseed)
+    #if os.path.exists(os.path.join(args.imagepath, "splits/", f'train_seed_{args.dataseed}.csv')):
+    #    train_csv = os.path.join(args.imagepath, "splits/", f'train_seed_{args.dataseed}.csv')
+    #    valid_csv = os.path.join(args.imagepath, "splits/", f'val_seed_{args.dataseed}.csv')
+    #    test_csv = os.path.join(args.imagepath, "splits/", f'test_seed_{args.dataseed}.csv')
+    #else:
+    train_csv, valid_csv, test_csv = data.split_train_val_test(args.labelpath, os.path.join(args.imagepath, "splits"),
+                                                               train_size=0.6, val_size=0.2, seed=args.dataseed)
 
     train_dataset = data.get_dataset(args.imagepath, train_csv)
     valid_dataset = data.get_dataset(args.imagepath, valid_csv)

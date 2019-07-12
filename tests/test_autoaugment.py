@@ -198,13 +198,14 @@ class TestAutoAugment(object):
 
     def test_cifar10_call(self):
         augment_policy = AugmentationPolicy(dataset="cifar10")
-        np.random.seed(6)
-        aug_img = augment_policy.call(self.tf_img)
-        np.random.seed(6)
+        np.random.seed(1)
+        aug_img = augment_policy.call(self.tf_img, test=True)
+        np.random.seed(1)
         manual_img = flip(self.np_img)
         manual_img = zero_pad_and_crop(manual_img)
         manual_img = Image.fromarray(manual_img)
-        transformations = augment_policy.subpolicies[np.random.randint(augment_policy.nsubpolicy)]
+        _ = np.random.randint(augment_policy.nsubpolicy)
+        transformations = augment_policy.subpolicies[1]
         for t in transformations:
             if np.random.random() < t[1]:
                 if len(t) == 3:
@@ -234,13 +235,14 @@ class TestAutoAugment(object):
 
     def test_svhn_call(self):
         augment_policy = AugmentationPolicy(dataset="svhn")
-        np.random.seed(3)
-        aug_img = augment_policy.call(self.tf_img)
-        np.random.seed(3)
+        np.random.seed(1)
+        aug_img = augment_policy.call(self.tf_img, test=True)
+        np.random.seed(1)
         manual_img = flip(self.np_img)
         manual_img = zero_pad_and_crop(manual_img)
         manual_img = Image.fromarray(manual_img)
-        transformations = augment_policy.subpolicies[np.random.randint(augment_policy.nsubpolicy)]
+        _ = np.random.randint(augment_policy.nsubpolicy)
+        transformations = augment_policy.subpolicies[0]
         for t in transformations:
             if np.random.random() < t[1]:
                 if len(t) == 3:
@@ -267,13 +269,14 @@ class TestAutoAugment(object):
 
     def test_imagenet_call(self):
         augment_policy = AugmentationPolicy(dataset="imagenet")
-        np.random.seed(4)
-        aug_img = augment_policy.call(self.tf_img)
-        np.random.seed(4)
+        np.random.seed(0)
+        aug_img = augment_policy.call(self.tf_img, test=True)
+        np.random.seed(0)
         manual_img = flip(self.np_img)
         manual_img = zero_pad_and_crop(manual_img)
         manual_img = Image.fromarray(manual_img)
-        transformations = augment_policy.subpolicies[np.random.randint(augment_policy.nsubpolicy)]
+        _ = np.random.randint(augment_policy.nsubpolicy)
+        transformations = augment_policy.subpolicies[18]
         for t in transformations:
             if np.random.random() < t[1]:
                 manual_img = t[0](manual_img, t[2])

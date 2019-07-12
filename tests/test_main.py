@@ -67,9 +67,11 @@ class TestMain(object):
     def test_main(self, tmpdir):
         imagedir = str(tmpdir.join("train-jpg"))
         labelpath = str(tmpdir.join("train-jpg").join("train_v2.csv"))
-        nepoch = 1
+        nepoch = 3
         batchsize = 1
-        fakearg = ["--imagepath", imagedir, "--labelpath", labelpath, "--nepoch", str(nepoch)]
-        fakearg = fakearg + ["--batchsize", str(batchsize), "--log", "test.log"]
+        patience = 1
+        lr = 1
+        fakearg = ["--imagepath", imagedir, "--labelpath", labelpath, "--nepoch", str(nepoch), "--lr", str(lr)]
+        fakearg = fakearg + ["--batchsize", str(batchsize), "--log", "test.log", "--patience", str(patience)]
 
         assert subprocess.call(["python", "ecodse_funtime_alpha/main.py", *fakearg]) == 0

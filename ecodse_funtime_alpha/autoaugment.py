@@ -307,6 +307,8 @@ class AugmentationPolicy(object):
     ----------
     subpolicies : list of tuples
         each element if a set of 2 operations for image augmentation representing the 25 optimal policies for CIFAR10
+    dataset : str
+        name of the dataset the chosen policy was trained on
 
     Methods
     -------
@@ -328,6 +330,9 @@ class AugmentationPolicy(object):
             options are cifar10, imagenet and svhn
 
         """
+
+        self.dataset = dataset
+
         if dataset == "cifar10":
             self.subpolicies = [
                 [(invert, 0.1, 7), (contrast, 0.2, 6)],
@@ -450,7 +455,7 @@ class AugmentationPolicy(object):
         else:
             return img
 
-    def call(self, image):
+    def call(self, image, test=False):
         """
         return an augmented image according to the policy
 
@@ -458,6 +463,9 @@ class AugmentationPolicy(object):
         ----------
         image : tf.tensor
             image stored as a tensor
+
+        test : bool
+            if true, will use a fixed subpolicy, and not a random one
 
         Returns
         -------
@@ -476,6 +484,11 @@ class AugmentationPolicy(object):
             subpol = self.subpolicies[np.random.randint(self.nsubpolicy)]
         else:
             subpol = []
+
+        if test:
+            subpol_idx = 1 if self.dataset == "cifar10" else 18 if self.dataset == "imagenet" else 0
+            subpol = self.subpolicies[subpol_idx]
+
         # convert image to PIL format and apply sub-policy
         image = Image.fromarray(image)
         for operation in subpol:
