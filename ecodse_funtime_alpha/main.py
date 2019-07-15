@@ -37,6 +37,18 @@ def get_args(args):
                            default=def_log,
                            help=f'log to this file (default {def_log}: log to screen)')
 
+    def_checkpointfrq = 1
+    argparser.add_argument('--ckptfreq',
+                           type=int,
+                           default=def_checkpointfrq,
+                           help=f'how often the model is saved during training (default {def_checkpointfrq} epochs)')
+
+    def_checkpointpath = 'saved_model/cp-{epoch:04d}.ckpt'
+    argparser.add_argument('--ckptpath',
+                           type=str,
+                           default=def_checkpointpath,
+                           help=f'checkpoint path (default {def_checkpointpath})')
+
     def_impath = '../../rainforest/fixed-train-jpg/'
     argparser.add_argument('--imagepath',
                            default=def_impath,
@@ -442,11 +454,6 @@ if __name__ == "__main__":
     if not os.path.exists(os.path.join(args.imagepath, "splits/")):
         os.makedirs(os.path.join(args.imagepath, "splits/"))
 
-    #if os.path.exists(os.path.join(args.imagepath, "splits/", f'train_seed_{args.dataseed}.csv')):
-    #    train_csv = os.path.join(args.imagepath, "splits/", f'train_seed_{args.dataseed}.csv')
-    #    valid_csv = os.path.join(args.imagepath, "splits/", f'val_seed_{args.dataseed}.csv')
-    #    test_csv = os.path.join(args.imagepath, "splits/", f'test_seed_{args.dataseed}.csv')
-    #else:
     train_csv, valid_csv, test_csv = data.split_train_val_test(args.labelpath, os.path.join(args.imagepath, "splits"),
                                                                train_size=0.6, val_size=0.2, seed=args.dataseed)
 
@@ -516,7 +523,15 @@ if __name__ == "__main__":
         dense2=args.dense2,
         outsize=9
     )
+
     optimizer = tf.keras.optimizers.Adam(lr=args.lr)
+
+    # callback method for checkpointing
+    cp_callback = tf.keras.callbacks.ModelCheckpoint(args.ckptpath,
+                                                     verbose=0,
+                                                     save_weights_only=True,
+                                                     period=args.ckptfreq)
+
     loss = train.fit_loop(train_dataset, valid_dataset, model, optimizer, args.nepoch, args.batchsize,
-                          augment_policy=args.dataaugment, callback=[ModelCallback(args.patience)])
+                          augment_policy=args.dataaugment, callback=[ModelCallback(args.patience), cp_callback])
     val_metrics = train.evaluate_model(model, test_dataset, 2)
