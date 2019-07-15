@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-tf.enable_eager_execution()
+tf.compat.v1.enable_eager_execution()
 
 
 class TestMLP(tf.keras.Model):

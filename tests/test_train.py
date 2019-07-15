@@ -10,7 +10,7 @@ from ecodse_funtime_alpha.train import batch_dataset
 from ecodse_funtime_alpha.train import fit_loop
 from ecodse_funtime_alpha.train import train_loop
 
-tf.enable_eager_execution()
+tf.compat.v1.enable_eager_execution()
 
 
 class TestBatchDataset(object):
@@ -52,34 +52,36 @@ class TestAugmentDataset(object):
         self.img_color = 155
         img = np.zeros((1, self.img_size, self.img_size, self.img_channel), dtype=np.uint8)
         img[0, self.img_colorpixel:] = self.img_color
-        self.img_ds = tf.data.Dataset.from_tensor_slices(img)
+        img_ds = tf.data.Dataset.from_tensor_slices(img)
+        label_ds = tf.data.Dataset.from_tensor_slices(tf.zeros([1, 1]))
+        self.dataset = tf.data.Dataset.zip((img_ds, label_ds))
 
     def test_augmentdataset_noaugment(self):
         scheme = "no-augment"
-        init_dataset = self.img_ds
-        augmented_dataset = augment_images(self.img_ds, scheme)
-        assert all([np.all(x.numpy() == y.numpy()) for x, y in zip(augmented_dataset, init_dataset)])
+        init_dataset = self.dataset
+        augmented_dataset = augment_images(self.dataset, scheme)
+        assert all([np.all(x[0].numpy() == y[0].numpy()) for x, y in zip(augmented_dataset, init_dataset)])
 
     def test_augmentdataset_cifar(self):
         scheme = "cifar10"
-        init_img = [x.numpy() for x in self.img_ds]
+        init_img = [x.numpy() for x, _ in self.dataset]
         np.random.seed(2)
-        augmented_dataset = augment_images(self.img_ds, scheme)
-        assert any([np.any(x.numpy() != y) for x, y in zip(augmented_dataset, init_img)])
+        augmented_dataset = augment_images(self.dataset, scheme)
+        assert any([np.any(x.numpy() != y) for (x, _), y in zip(augmented_dataset, init_img)])
 
     def test_augmentdataset_imagenet(self):
         scheme = "imagenet"
-        init_img = [x.numpy() for x in self.img_ds]
+        init_img = [x.numpy() for x, _ in self.dataset]
         np.random.seed(2)
-        augmented_dataset = augment_images(self.img_ds, scheme)
-        assert any([np.any(x.numpy() != y) for x, y in zip(augmented_dataset, init_img)])
+        augmented_dataset = augment_images(self.dataset, scheme)
+        assert any([np.any(x.numpy() != y) for (x, _), y in zip(augmented_dataset, init_img)])
 
     def test_augmentdataset_svhn(self):
         scheme = "svhn"
-        init_img = [x.numpy() for x in self.img_ds]
+        init_img = [x.numpy() for x, _ in self.dataset]
         np.random.seed(2)
-        augmented_dataset = augment_images(self.img_ds, scheme)
-        assert any([np.any(x.numpy() != y) for x, y in zip(augmented_dataset, init_img)])
+        augmented_dataset = augment_images(self.dataset, scheme)
+        assert any([np.any(x.numpy() != y) for (x, _), y in zip(augmented_dataset, init_img)])
 
 
 class TestFitLoop(object):

@@ -9,10 +9,12 @@ import tensorflow as tf
 
 from mlflow import log_metric, log_param
 from orion.client import report_results
+from yaml import load
 import ecodse_funtime_alpha.data as data
 import ecodse_funtime_alpha.models as models
 import ecodse_funtime_alpha.train as train
 
+tf.compat.v1.enable_eager_execution()
 logger = logging.getLogger(__name__)
 
 
@@ -32,16 +34,19 @@ def get_args(args):
     """
     argparser = argparse.ArgumentParser()
 
+    argparser.add_argument('--config',
+                           required=True,
+                           help='config file with hyper parameters - in yaml format')
+
     def_log = None
     argparser.add_argument('--log',
                            default=def_log,
                            help=f'log to this file (default {def_log}: log to screen)')
 
-    def_checkpointfrq = 1
+    def_checkpointfrq = 'epoch'
     argparser.add_argument('--ckptfreq',
-                           type=int,
                            default=def_checkpointfrq,
-                           help=f'how often the model is saved during training (default {def_checkpointfrq} epochs)')
+                           help=f'how many examples passed in training before saving (default is once per epoch)')
 
     def_checkpointpath = 'saved_model/cp-{epoch:04d}.ckpt'
     argparser.add_argument('--ckptpath',
@@ -334,8 +339,6 @@ class ModelCallback(tf.keras.callbacks.Callback):
     -------
     on_train_begin:
         operations to perform when training begins
-    on_train_batch_end:
-        operations to perform when training on a batch is complete
     on_train_epoch_end:
         operations to perform when an epoch of training is complete
     on_train_end:
@@ -370,18 +373,6 @@ class ModelCallback(tf.keras.callbacks.Callback):
         self.start_time = datetime.datetime.now()
         print(f"Starting training at {self.start_time}")
 
-    def on_train_batch_end(self, batch, logs=None):
-        """operations to perform after training on a batch
-
-        Parameters
-        ----------
-        batch : int
-            index of the batch
-        logs : dict, optional
-            dictionary containing the model evaluation metrics, by default None
-        """
-        pass
-
     def on_epoch_end(self, epoch, logs=None):
         """operations to complete after an epoch is complete
 
@@ -392,9 +383,9 @@ class ModelCallback(tf.keras.callbacks.Callback):
         logs : dict, optional
             dictionary containing the model evaluation metrics, by default None
         """
-        print(f"For epoch {epoch}, loss is {'{:7.2f}'.format(logs['loss'])}")
-        print(f"For epoch {epoch}, accuracy is {'{:7.2f}'.format(logs['acc'])}")
-        log_metric("loss", logs["loss"], step=epoch)
+        logging.info(f"For epoch {epoch}, training loss / accuracy is {'{:7.2f}'.format(logs['loss'])} / {'{:7.2f}'.format(logs['acc'])} ")
+        logging.info(f"For epoch {epoch}, validation loss / accuracy is {'{:7.2f}'.format(logs['val_loss'])} / {'{:7.2f}'.format(logs['val_acc'])} ")
+        log_metric("training_loss", logs["loss"], step=epoch)
         log_metric("training_acc", logs["acc"], step=epoch)
         log_metric("valid_loss", logs["val_loss"], step=epoch)
         log_metric("valid_acc", logs["val_acc"], step=epoch)
@@ -406,10 +397,13 @@ class ModelCallback(tf.keras.callbacks.Callback):
         else:
             self.not_improving_since += 1
 
+        logging.info('\ndone epoch {} => loss {} - validation accuracy {} (not improving'
+                     ' since {} epoch)'.format(epoch, logs['loss'], logs['val_acc'], self.not_improving_since))
+
         if self.not_improving_since >= self.patience:
             self.stopped_epoch = epoch
             self.model.stop_training = True
-            print("Restoring model weights from the end of the best epoch")
+            logging.info("Restoring model weights from the end of the best epoch")
             self.model.set_weights(self.best_weights)
 
     def on_train_end(self, logs=None):
@@ -421,10 +415,10 @@ class ModelCallback(tf.keras.callbacks.Callback):
             dictionary containing the model evaluation metrics, by default None
         """
         self.end_time = datetime.datetime.now()
-        print(f"Ending training at {self.end_time}")
-        print(f"Training duration: {self.end_time - self.start_time}")
+        logging.info(f"Ending training at {self.end_time}")
+        logging.info(f"Training duration: {self.end_time - self.start_time}")
         if self.stopped_epoch > 0:
-            print(f"Early stopping at epoch {self.stopped_epoch}")
+            logging.info(f"Early stopping at epoch {self.stopped_epoch}")
         log_metric("best_valid_acc", self.best_valid_acc)
         report_results([dict(
             name="valid_acc",
@@ -435,6 +429,8 @@ class ModelCallback(tf.keras.callbacks.Callback):
 
 if __name__ == "__main__":
     args = get_args(sys.argv[1:])
+
+    assert args.ckptfreq == 'epoch' or isinstance(args.ckptfreq, int)
 
     logging.basicConfig(level=logging.INFO)
 
@@ -447,7 +443,11 @@ if __name__ == "__main__":
         root.setLevel(logging.INFO)
         root.addHandler(handler)
 
-    tf.random.set_random_seed(args.seed)
+    with open(args.config, 'r') as stream:
+        # hp stands from hyper parameters
+        hp = load(stream)
+
+    tf.compat.v1.random.set_random_seed(args.seed)
     np.random.seed(args.seed)
 
     # split data into train/valid/test set
@@ -461,77 +461,83 @@ if __name__ == "__main__":
     valid_dataset = data.get_dataset(args.imagepath, valid_csv)
     test_dataset = data.get_dataset(args.imagepath, test_csv)
 
+    print(hp)
+
     log_param("random_seed", args.seed)
-    log_param("filter1", args.filter1)
-    log_param("filter2", args.filter2)
-    log_param("filter3", args.filter3)
-    log_param("filter4", args.filter4)
-    log_param("filter5", args.filter5)
-    log_param("kernel_size1", args.ksize1)
-    log_param("kernel_size2", args.ksize2)
-    log_param("kernel_size3", args.ksize3)
-    log_param("kernel_size4", args.ksize4)
-    log_param("kernel_size5", args.ksize5)
-    log_param("stride1", args.stride1)
-    log_param("stride2", args.stride2)
-    log_param("stride3", args.stride3)
-    log_param("stride4", args.stride4)
-    log_param("stride5", args.stride5)
-    log_param("pool_size1", args.pool1)
-    log_param("pool_size2", args.pool2)
-    log_param("pool_size3", args.pool3)
-    log_param("pool_size4", args.pool4)
-    log_param("pool_size5", args.pool5)
-    log_param("pool_stride1", args.stridepool1)
-    log_param("pool_stride2", args.stridepool2)
-    log_param("pool_stride3", args.stridepool3)
-    log_param("pool_stride4", args.stridepool4)
-    log_param("pool_stride5", args.stridepool5)
-    log_param("dense_size1", args.dense1)
-    log_param("dense_size2", args.dense2)
-    log_param("learning_rate", args.lr)
-    log_param("batchsize", args.batchsize)
-    log_param("patience", args.patience)
+    log_param("filter1", hp['filter1'])
+    log_param("filter2", hp['filter2'])
+    log_param("filter3", hp['filter3'])
+    log_param("filter4", hp['filter4'])
+    log_param("filter5", hp['filter5'])
+    log_param("kernel_size1", hp['ksize1'])
+    log_param("kernel_size2", hp['ksize2'])
+    log_param("kernel_size3", hp['ksize3'])
+    log_param("kernel_size4", hp['ksize4'])
+    log_param("kernel_size5", hp['ksize5'])
+    log_param("stride1", hp['stride1'])
+    log_param("stride2", hp['stride2'])
+    log_param("stride3", hp['stride3'])
+    log_param("stride4", hp['stride4'])
+    log_param("stride5", hp['stride5'])
+    log_param("pool_size1", hp['pool1'])
+    log_param("pool_size2", hp['pool2'])
+    log_param("pool_size3", hp['pool3'])
+    log_param("pool_size4", hp['pool4'])
+    log_param("pool_size5", hp['pool5'])
+    log_param("pool_stride1", hp['stridepool1'])
+    log_param("pool_stride2", hp['stridepool2'])
+    log_param("pool_stride3", hp['stridepool3'])
+    log_param("pool_stride4", hp['stridepool4'])
+    log_param("pool_stride5", hp['stridepool5'])
+    log_param("dense_size1", hp['dense1'])
+    log_param("dense_size2", hp['dense2'])
+    log_param("learning_rate", hp['lr'])
+    log_param("batchsize", hp['batchsize'])
+    log_param("patience", hp['patience'])
 
     model = models.CustomVGG16(
-        filter1=args.filter1,
-        kernel_size1=args.ksize1,
-        stride1=args.stride1,
-        pool1=args.pool1,
-        stride_pool1=args.stridepool1,
-        filter2=args.filter2,
-        kernel_size2=args.ksize2,
-        stride2=args.stride2,
-        pool2=args.pool2,
-        stride_pool2=args.stridepool2,
-        filter3=args.filter3,
-        kernel_size3=args.ksize3,
-        stride3=args.stride3,
-        pool3=args.pool3,
-        stride_pool3=args.stridepool3,
-        filter4=args.filter4,
-        kernel_size4=args.ksize4,
-        stride4=args.stride4,
-        pool4=args.pool4,
-        stride_pool4=args.stridepool4,
-        filter5=args.filter5,
-        kernel_size5=args.ksize5,
-        stride5=args.stride5,
-        pool5=args.pool5,
-        stride_pool5=args.stridepool5,
-        dense1=args.dense1,
-        dense2=args.dense2,
+        filter1=hp['filter1'],
+        kernel_size1=hp['ksize1'],
+        stride1=hp['stride1'],
+        pool1=hp['pool1'],
+        stride_pool1=hp['stridepool1'],
+        filter2=hp['filter2'],
+        kernel_size2=hp['ksize2'],
+        stride2=hp['stride2'],
+        pool2=hp['pool2'],
+        stride_pool2=hp['stridepool2'],
+        filter3=hp['filter3'],
+        kernel_size3=hp['ksize3'],
+        stride3=hp['stride3'],
+        pool3=hp['pool3'],
+        stride_pool3=hp['stridepool3'],
+        filter4=hp['filter4'],
+        kernel_size4=hp['ksize4'],
+        stride4=hp['stride4'],
+        pool4=hp['pool4'],
+        stride_pool4=hp['stridepool4'],
+        filter5=hp['filter5'],
+        kernel_size5=hp['ksize5'],
+        stride5=hp['stride5'],
+        pool5=hp['pool5'],
+        stride_pool5=hp['stridepool5'],
+        dense1=hp['dense1'],
+        dense2=hp['dense2'],
         outsize=9
     )
 
-    optimizer = tf.keras.optimizers.Adam(lr=args.lr)
+    optimizer = tf.keras.optimizers.Adam(lr=hp['lr'])
 
     # callback method for checkpointing
+    train_len = tf.data.experimental.cardinality(train_dataset).numpy()
     cp_callback = tf.keras.callbacks.ModelCheckpoint(args.ckptpath,
                                                      verbose=0,
                                                      save_weights_only=True,
-                                                     period=args.ckptfreq)
+                                                     save_freq=args.ckptfreq)
 
-    loss = train.fit_loop(train_dataset, valid_dataset, model, optimizer, args.nepoch, args.batchsize,
-                          augment_policy=args.dataaugment, callback=[ModelCallback(args.patience), cp_callback])
-    val_metrics = train.evaluate_model(model, test_dataset, 2)
+    loss = train.fit_loop(train_dataset, valid_dataset, model, optimizer, hp['nepoch'], hp['batchsize'],
+                          augment_policy=hp['dataaugment'], callback=[ModelCallback(hp['patience']), cp_callback])
+    test_metrics = train.evaluate_model(model, test_dataset, hp['batchsize'])
+    log_metric("test_loss", test_metrics[0])
+    log_metric("test_acc", test_metrics[1])
+    logging.info(f"Test loss / accuracy is {'{:7.2f}'.format(test_metrics[0])} / {'{:7.2f}'.format(test_metrics[1])}")

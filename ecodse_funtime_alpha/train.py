@@ -4,7 +4,7 @@ import tensorflow as tf
 
 import ecodse_funtime_alpha.autoaugment as autoaugment
 
-tf.enable_eager_execution()
+tf.compat.v1.enable_eager_execution()
 
 
 def batch_dataset(dataset, nepoch, batchsize):
@@ -56,7 +56,7 @@ def augment_images(dataset, scheme="cifar10"):
         augment_policy = autoaugment.AugmentationPolicy(dataset=scheme)
         # dataset.map is not done eagerly; using contrib.earg.py_func to get it running
         # will be deprecated in tensorflow 2
-        return dataset.map(lambda x: tf.contrib.eager.py_func(augment_policy.call, [x], tf.float64))
+        return dataset.map(lambda x, y: (tf.contrib.eager.py_func(augment_policy.call, [x], tf.float64), y), num_parallel_calls=tf.data.experimental.AUTOTUNE)
     else:
         # no augmentation
         return dataset
