@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import argparse
 import datetime
 import logging
@@ -461,8 +463,6 @@ if __name__ == "__main__":
     valid_dataset = data.get_dataset(args.imagepath, valid_csv)
     test_dataset = data.get_dataset(args.imagepath, test_csv)
 
-    print(hp)
-
     log_param("random_seed", args.seed)
     log_param("filter1", hp['filter1'])
     log_param("filter2", hp['filter2'])
@@ -494,50 +494,50 @@ if __name__ == "__main__":
     log_param("learning_rate", hp['lr'])
     log_param("batchsize", hp['batchsize'])
     log_param("patience", hp['patience'])
+    log_param("data_augmentation", hp['dataaugment'])
 
     model = models.CustomVGG16(
-        filter1=hp['filter1'],
-        kernel_size1=hp['ksize1'],
-        stride1=hp['stride1'],
-        pool1=hp['pool1'],
-        stride_pool1=hp['stridepool1'],
-        filter2=hp['filter2'],
-        kernel_size2=hp['ksize2'],
-        stride2=hp['stride2'],
-        pool2=hp['pool2'],
-        stride_pool2=hp['stridepool2'],
-        filter3=hp['filter3'],
-        kernel_size3=hp['ksize3'],
-        stride3=hp['stride3'],
-        pool3=hp['pool3'],
-        stride_pool3=hp['stridepool3'],
-        filter4=hp['filter4'],
-        kernel_size4=hp['ksize4'],
-        stride4=hp['stride4'],
-        pool4=hp['pool4'],
-        stride_pool4=hp['stridepool4'],
-        filter5=hp['filter5'],
-        kernel_size5=hp['ksize5'],
-        stride5=hp['stride5'],
-        pool5=hp['pool5'],
-        stride_pool5=hp['stridepool5'],
-        dense1=hp['dense1'],
-        dense2=hp['dense2'],
+        filter1=int(hp['filter1']),
+        kernel_size1=int(hp['ksize1']),
+        stride1=int(hp['stride1']),
+        pool1=int(hp['pool1']),
+        stride_pool1=int(hp['stridepool1']),
+        filter2=int(hp['filter2']),
+        kernel_size2=int(hp['ksize2']),
+        stride2=int(hp['stride2']),
+        pool2=int(hp['pool2']),
+        stride_pool2=int(hp['stridepool2']),
+        filter3=int(hp['filter3']),
+        kernel_size3=int(hp['ksize3']),
+        stride3=int(hp['stride3']),
+        pool3=int(hp['pool3']),
+        stride_pool3=int(hp['stridepool3']),
+        filter4=int(hp['filter4']),
+        kernel_size4=int(hp['ksize4']),
+        stride4=int(hp['stride4']),
+        pool4=int(hp['pool4']),
+        stride_pool4=int(hp['stridepool4']),
+        filter5=int(hp['filter5']),
+        kernel_size5=int(hp['ksize5']),
+        stride5=int(hp['stride5']),
+        pool5=int(hp['pool5']),
+        stride_pool5=int(hp['stridepool5']),
+        dense1=int(hp['dense1']),
+        dense2=int(hp['dense2']),
         outsize=9
     )
 
     optimizer = tf.keras.optimizers.Adam(lr=hp['lr'])
 
     # callback method for checkpointing
-    train_len = tf.data.experimental.cardinality(train_dataset).numpy()
     cp_callback = tf.keras.callbacks.ModelCheckpoint(args.ckptpath,
                                                      verbose=0,
                                                      save_weights_only=True,
                                                      save_freq=args.ckptfreq)
 
-    loss = train.fit_loop(train_dataset, valid_dataset, model, optimizer, hp['nepoch'], hp['batchsize'],
-                          augment_policy=hp['dataaugment'], callback=[ModelCallback(hp['patience']), cp_callback])
-    test_metrics = train.evaluate_model(model, test_dataset, hp['batchsize'])
+    loss = train.fit_loop(train_dataset, valid_dataset, model, optimizer, int(hp['nepoch']), int(hp['batchsize']),
+                          augment_policy=hp['dataaugment'], callback=[ModelCallback(int(hp['patience'])), cp_callback])
+    test_metrics = train.evaluate_model(model, test_dataset, int(hp['batchsize']))
     log_metric("test_loss", test_metrics[0])
     log_metric("test_acc", test_metrics[1])
     logging.info(f"Test loss / accuracy is {'{:7.2f}'.format(test_metrics[0])} / {'{:7.2f}'.format(test_metrics[1])}")
