@@ -20,7 +20,7 @@ from ecodse_funtime_alpha.autoaugment import translate
 from ecodse_funtime_alpha.autoaugment import zero_pad_and_crop
 from ecodse_funtime_alpha.cutout import cutout_numpy
 
-tf.enable_eager_execution()
+tf.compat.v1.enable_eager_execution()
 
 
 class TestAutoAugment(object):

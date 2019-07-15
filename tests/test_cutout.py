@@ -6,7 +6,7 @@ from ecodse_funtime_alpha.cutout import create_cutout_mask
 from ecodse_funtime_alpha.cutout import cutout_numpy
 from ecodse_funtime_alpha.cutout import cutout_tf
 
-tf.enable_eager_execution()
+tf.compat.v1.enable_eager_execution()
 
 
 class TestCutout(object):

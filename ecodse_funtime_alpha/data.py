@@ -6,7 +6,7 @@ import numpy as np
 import tensorflow as tf
 from sklearn.preprocessing import MultiLabelBinarizer
 
-tf.enable_eager_execution()
+tf.compat.v1.enable_eager_execution()
 
 
 def preprocess_image(image):
